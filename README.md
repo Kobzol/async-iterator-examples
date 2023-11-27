@@ -15,4 +15,4 @@ Currently implemented examples:
 
 ## Resources
 These interfaces have been described in detail in several blog posts by [WithoutBoats](https://without.boats/blog/poll-next/)
-and Yoshua Wuyts(https://blog.yoshuawuyts.com/async-iterator-trait/).
+and [Yoshua Wuyts](https://blog.yoshuawuyts.com/async-iterator-trait/).
