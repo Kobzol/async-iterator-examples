@@ -1,0 +1,6 @@
+[workspace]
+members = ["json-line-parser"]
+resolver = "2"
+
+[profile.release]
+debug = 1
