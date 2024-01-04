@@ -102,8 +102,26 @@ async fn iterate_repos_async_gen(client: &Octocrab) -> u32 {
 }
 
 // poll version
-// Impossible due to octocrab using double lifetime?
-// If anyone knows how to write this manually, I'd be glad for help :)
+pin_project! {
+    struct RepoIterPoll<'a> {
+        client: &'a Octocrab,
+        #[pin]
+        future: Option<Pin<Box<dyn Future<Output=octocrab::Result<octocrab::Page<Repository>>> + 'a>>>,
+        page: Option<u32>,
+        repos: std::vec::IntoIter<Repository>,
+    }
+}
+
+// This needs to be a separate `async fn` because the `send` method captures a reference
+// to a local variable.
+async fn fetch_page(client: &Octocrab, page: u32) -> octocrab::Result<Page<Repository>> {
+    client.orgs("rust-lang")
+        .list_repos()
+        .per_page(100)
+        .page(page)
+        .send()
+        .await
+}
 
 // pin_project! {
 //     struct RepoIterPoll<'a> {
@@ -115,38 +133,59 @@ async fn iterate_repos_async_gen(client: &Octocrab) -> u32 {
 //     }
 // }
 
-// impl<'a> PollNextAsyncIter for RepoIterPoll<'a> {
-//     type Item = Repository;
-//
-//     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-//         let mut this = self.project();
-//         let client: &'a Octocrab = this.client;
-//
-//         if let Some(item) = this.repos.next() {
-//             return Poll::Ready(Some(item));
-//         }
-//         let Some(page) = this.page else { return Poll::Ready(None); };
-//
-//         if this.future.is_none() {
-//             let handler = client.orgs("rust-lang");
-//             let handler: ListReposBuilder<'a, '_> = handler.list_repos().per_page(100)
-//                 .page(*page);
-//             let handler: Box<dyn Future<Output=octocrab::Result<Page<Repository>>>> = Box::new(handler.send());
-//             this.future.as_mut().set(Some(handler));
-//         }
-//
-//         // this.future.as_pin_mut().unwrap().poll(cx);
-//
-//         todo!();
-//         Poll::Pending
-//     }
-// }
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
+        loop {
+            if let Some(item) = this.repos.next() {
+                return Poll::Ready(Some(item));
+            }
+
+            let Some(page) = this.page else { return Poll::Ready(None); };
+
+            if this.future.is_none() {
+                let future = fetch_page(this.client, *page);
+                this.future.as_mut().set(Some(Box::pin(future)));
+            }
+
+            match this.future.as_mut().as_pin_mut().unwrap().poll(cx) {
+                Poll::Ready(repos) => {
+                    let repos = repos.unwrap();
+                    if repos.next.is_some() {
+                        *this.page = Some(*page + 1);
+                    } else {
+                        *this.page = None;
+                    }
+                    *this.repos = repos.into_iter();
+                    *this.future = None;
+                }
+                Poll::Pending => return Poll::Pending
+            }
+        }
+    }
+}
+
+async fn iterate_repos_poll(client: &Octocrab) -> u32 {
+    let mut count = 0;
+    let mut iter = RepoIterPoll {
+        client,
+        future: None,
+        page: Some(0),
+        repos: Default::default()
+    };
+
+    let mut iter = pin!(iter);
+    while let Some(msg) = poll_fn(|cx| iter.as_mut().poll_next(cx)).await {
+        count += 1;
+    }
+    count
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let client = octocrab::OctocrabBuilder::default().build()?;
-    let count = iterate_repos_afit(&client).await;
+    // let count = iterate_repos_afit(&client).await;
     // let count = iterate_repos_async_gen(&client).await;
+    let count = iterate_repos_poll(&client).await;
 
     println!("{count}");
 
