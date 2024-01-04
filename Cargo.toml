@@ -1,5 +1,5 @@
 [workspace]
-members = ["json-line-parser", "shared"]
+members = ["shared", "json-line-parser", "github-api-pagination"]
 resolver = "2"
 
 [profile.release]
