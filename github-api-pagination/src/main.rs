@@ -1,21 +1,21 @@
 #![feature(gen_blocks)]
 #![feature(async_iterator)]
 
-use std::collections::VecDeque;
-use std::future::{Future, poll_fn};
-use std::pin::{pin, Pin};
 use octocrab::models::Repository;
 use octocrab::Octocrab;
+use pin_project_lite::pin_project;
 use shared::{AfitAsyncIter, PollNextAsyncIter};
 use std::async_iter::AsyncIterator;
+use std::collections::VecDeque;
+use std::future::{poll_fn, Future};
+use std::pin::{pin, Pin};
 use std::task::{Context, Poll};
-use pin_project_lite::pin_project;
 
 // AFIT version
 struct RepoIterAfit<'a> {
     client: &'a Octocrab,
     page: Option<u32>,
-    repos: std::vec::IntoIter<Repository>
+    repos: std::vec::IntoIter<Repository>,
 }
 
 /// The ergonomics here are not great, as the splitting of batches into individual items
@@ -30,7 +30,10 @@ impl<'a> AfitAsyncIter for RepoIterAfit<'a> {
                 return Some(next);
             }
             if let Some(page) = self.page {
-                let repos = self.client.orgs("rust-lang").list_repos()
+                let repos = self
+                    .client
+                    .orgs("rust-lang")
+                    .list_repos()
                     .per_page(100)
                     .page(page)
                     .send()
@@ -55,7 +58,7 @@ async fn iterate_repos_afit(client: &Octocrab) -> u32 {
     let mut iterator = RepoIterAfit {
         client,
         page: Some(0),
-        repos: Default::default()
+        repos: Default::default(),
     };
 
     while let Some(_repo) = iterator.next().await {
@@ -70,20 +73,22 @@ async fn iterate_repos_async_gen(client: &Octocrab) -> u32 {
     let mut iter = async gen {
         let mut page = 0u32;
         loop {
-        let mut repos = client.orgs("rust-lang").list_repos()
-        .per_page(100)
-        .page(page)
-        .send()
-        .await
-        .unwrap();
-        for repo in repos.take_items() {
-        yield repo;
-        }
-        if repos.next.is_none() {
-        break;
-        } else {
-        page += 1;
-        }
+            let mut repos = client
+                .orgs("rust-lang")
+                .list_repos()
+                .per_page(100)
+                .page(page)
+                .send()
+                .await
+                .unwrap();
+            for repo in repos.take_items() {
+                yield repo;
+            }
+            if repos.next.is_none() {
+                break;
+            } else {
+                page += 1;
+            }
         }
     };
 
@@ -125,8 +130,7 @@ impl<'a> PollNextAsyncIter for RepoIterPoll<'a> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let client = octocrab::OctocrabBuilder::default()
-        .build()?;
+    let client = octocrab::OctocrabBuilder::default().build()?;
     let count = iterate_repos_afit(&client).await;
     // let count = iterate_repos_async_gen(&client).await;
 

@@ -1,7 +1,7 @@
+use json_line_parser::Message;
 use std::io::Write;
 use std::net::TcpStream;
 use std::time::Instant;
-use json_line_parser::Message;
 
 #[tokio::main]
 async fn main() {
@@ -16,5 +16,8 @@ async fn main() {
         stream.write(b"\n").unwrap();
     }
     stream.flush().unwrap();
-    println!("Message/s: {}", count as f64 / start.elapsed().as_secs_f64());
+    println!(
+        "Message/s: {}",
+        count as f64 / start.elapsed().as_secs_f64()
+    );
 }

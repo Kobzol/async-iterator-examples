@@ -12,14 +12,14 @@ pub trait AfitAsyncIter {
 pub trait PollNextAsyncIter {
     type Item;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>)
-                 -> Poll<Option<Self::Item>>;
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>>;
 }
 
 /// Lending version of AFIT `async fn next`
 pub trait LendAfitAsyncIter {
     type Item<'a>
-        where Self: 'a;
+    where
+        Self: 'a;
 
     async fn next(&mut self) -> Option<Self::Item<'_>>;
 }

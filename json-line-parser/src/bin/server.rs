@@ -3,7 +3,7 @@
 
 use std::async_iter::AsyncIterator;
 use std::future::poll_fn;
-use std::pin::{Pin, pin};
+use std::pin::{pin, Pin};
 use std::task::{Context, Poll};
 
 use json_line_parser::Message;
@@ -82,23 +82,22 @@ async fn message_reader_async_gen() -> anyhow::Result<u32> {
     let (mut client, _addr) = listener.accept().await?;
 
     // Note: the async gen doesn't hold any borrows across a yield point
-    let iter = async
-    gen {
+    let iter = async gen {
         let mut buffer = [0; 1024];
         let mut read_amount = 0;
         loop {
-        let read = client.read( & mut buffer[read_amount..]).await.unwrap();
-        if read == 0 {
-        return;
-        }
-        read_amount += read;
-        if let Some(newline_index) = buffer.iter().position( |& c | c == b'\n') {
-        let line = & buffer[..newline_index];
-        let msg: Message = serde_json::from_slice( &line).unwrap();
-        buffer.copy_within(newline_index + 1.., 0);
-        read_amount -= newline_index + 1;
-        yield msg;
-        }
+            let read = client.read(&mut buffer[read_amount..]).await.unwrap();
+            if read == 0 {
+                return;
+            }
+            read_amount += read;
+            if let Some(newline_index) = buffer.iter().position(|&c| c == b'\n') {
+                let line = &buffer[..newline_index];
+                let msg: Message = serde_json::from_slice(&line).unwrap();
+                buffer.copy_within(newline_index + 1.., 0);
+                read_amount -= newline_index + 1;
+                yield msg;
+            }
         }
     };
     let mut iter = pin!(iter);
@@ -127,7 +126,11 @@ impl AfitAsyncIter for MessageReaderAfit {
 
     async fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let read = self.stream.read(&mut self.buffer[self.read_amount..]).await.unwrap();
+            let read = self
+                .stream
+                .read(&mut self.buffer[self.read_amount..])
+                .await
+                .unwrap();
             if read == 0 {
                 return None;
             }
@@ -187,7 +190,11 @@ impl LendAfitAsyncIter for MessageReaderLendAfit {
             self.skip = 0;
         }
         loop {
-            let read = self.stream.read(&mut self.buffer[self.read_amount..]).await.unwrap();
+            let read = self
+                .stream
+                .read(&mut self.buffer[self.read_amount..])
+                .await
+                .unwrap();
             if read == 0 {
                 return None;
             }
@@ -212,7 +219,12 @@ async fn message_reader_lend_afit() -> anyhow::Result<u32> {
     };
 
     let mut counter = 0;
-    while let Some(msg) = reader.next().await.map(|v| serde_json::from_slice::<Message>(v)).transpose()? {
+    while let Some(msg) = reader
+        .next()
+        .await
+        .map(|v| serde_json::from_slice::<Message>(v))
+        .transpose()?
+    {
         match msg {
             Message::Ping => {}
             Message::Hello(_, count) => {
