@@ -45,7 +45,6 @@ impl<'a> AfitAsyncIter for RepoIterAfit<'a> {
                     self.page = Some(page + 1);
                 }
                 self.repos = repos.into_iter();
-                continue;
             } else {
                 return None;
             }
