@@ -1,5 +1,5 @@
 [workspace]
-members = ["json-line-parser"]
+members = ["json-line-parser", "shared"]
 resolver = "2"
 
 [profile.release]

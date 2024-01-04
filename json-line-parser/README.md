@@ -7,13 +7,17 @@ using `serde_json`.
     ```
     $ cargo run --release --bin server -- poll
     ```
-2) Generator
+2) `async gen`
     ```
-    $ cargo run --release --bin server -- gen
+    $ cargo run --release --bin server -- async-gen
     ```
-3) `async fn next`
+3) AFIT (`async fn next`)
     ```
-    $ cargo run --release --bin server -- async
+    $ cargo run --release --bin server -- afit
+    ```
+4) AFIT (`async fn next`)
+    ```
+    $ cargo run --release --bin server -- lend-afit
     ```
 
 ## Run client (benchmark)

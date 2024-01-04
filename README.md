@@ -1,12 +1,16 @@
 # Async iterator examples
-This repository contains an example (possibly more in the future :) ) of an asynchronous iterator implemented using three
-specific approaches:
+This repository contains example(s) of an asynchronous iterator implemented using various specific approaches:
 - Using the `poll_next` interface
-- Using an async generator (backed by the `poll_next` interface)
-- Using the `async fn next` interface
+- Using `async gen`
+- Using the `async fn next` (AFIT) interface
+- Using `async gen` without borrows across `yield` points (the proposed lowering-to-AFIT `async gen` blocks)
+- Using lending AFIT (if it makes sense)
+- Using `async gen` with lending (if it makes sense)
 
-This is just a quick little project in which I wanted to find out how ergonomic to implement and performant these
-approaches.
+> Lending means yielding references that point into the iterator itself.
+
+The goal is to compare the ergonomics (potentially also efficiency) properties of these approaches, and show how they
+can be used to write async iterators that might occur "in the wild".
 
 It's very much possible that the implementations are not as elegant as possible, possible improvements are welcome :)
 
