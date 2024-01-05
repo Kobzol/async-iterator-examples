@@ -187,6 +187,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "forwarding-iterator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "pin-project-lite",
+ "shared",
+ "tokio",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"

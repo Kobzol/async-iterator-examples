@@ -17,6 +17,7 @@ It's very much possible that the implementations are not as elegant as possible,
 Currently implemented examples:
 - [JSON message parser](json-line-parser)
 - [GitHub API pagination](github-api-pagination)
+- [Forwarding iterator](forwarding-iterator)
 
 ## Resources
 These interfaces have been described in detail in several blog posts by [WithoutBoats](https://without.boats/blog/poll-next/)
