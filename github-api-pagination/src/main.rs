@@ -123,15 +123,8 @@ async fn fetch_page(client: &Octocrab, page: u32) -> octocrab::Result<Page<Repos
         .await
 }
 
-// pin_project! {
-//     struct RepoIterPoll<'a> {
-//         client: &'a Octocrab,
-//         #[pin]
-//         future: Option<Box<dyn Future<Output=octocrab::Result<octocrab::Page<Repository>>> + 'a>>,
-//         page: Option<u32>,
-//         repos: std::vec::IntoIter<Repository>,
-//     }
-// }
+impl<'a> PollNextAsyncIter for RepoIterPoll<'a> {
+    type Item = Repository;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
